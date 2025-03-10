@@ -83,7 +83,6 @@ class SoftMax(Activation):
         return einsum("b...,b...o->bo", gradient, self.gradient(out))
 
 
-# Dictionary for activation functions
 activations = {
     "identity": Identity,
     "sigmoid": Sigmoid,
@@ -96,15 +95,3 @@ activations = {
 def get_activation(name):
     return activations[name]
 
-
-# Example usage
-if __name__ == "__main__":
-    X = np.array([[1, 2, -1], [-1, 0, 3]])
-
-    act = get_activation("relu")
-    print("ReLU Output:\n", act(X))
-    print("ReLU Gradient:\n", act.gradient(X))
-
-    act = get_activation("softmax")
-    print("SoftMax Output:\n", act(X))
-    print("SoftMax Gradient:\n", act.gradient(X))
