@@ -1,5 +1,6 @@
 program: train.py
 method: bayes
+name: sweep
 metric:
   name: val_accuracy
   goal: maximize
@@ -24,3 +25,13 @@ parameters:
     values: [32, 64, 128]
   activation:
     values: ["identity", "sigmoid", "tanh", "ReLU"]
+
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - "--wandb_entity"
+  - "livinNector-academic"
+  - "--wandb_project"
+  - "deep-learning-course"
+  - ${args}

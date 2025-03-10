@@ -101,7 +101,7 @@ def train(
                 eps=epsilon,
             )
     if wandb_project:
-        wandb.init(project=wandb_project, entity=wandb_entity, config={})
+        wandb.init(project=wandb_project, entity=wandb_entity)
         wandb.define_metric("accuracy", summary="max")
         wandb.define_metric("loss", summary="min")
         wandb.define_metric("val_accuracy", summary="max")
@@ -120,9 +120,10 @@ def train(
     )
     trainer.train(X_train, y_train, X_val, y_val)
     metrics = trainer.eval(X_test, y_test, metrics=["accuracy", "f1_score"])
-    for k, v in metrics.items():
-        wandb.run.summary[f"test_{k}"] = v
+    
     if wandb_project:
+        for k, v in metrics.items():
+            wandb.run.summary[f"test_{k}"] = v
         wandb.finish()
 
 
