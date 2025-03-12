@@ -23,15 +23,17 @@ def one_hot(y, n=None):
     y_one_hot[np.arange(y.shape[0]), y] = 1
     return y_one_hot
 
-def flatten(X):
-    return X.reshape(X.shape[0],-1)
 
-def einsum(*operands):
+def flatten(X):
+    return X.reshape(X.shape[0], -1)
+
+
+def einsum(*operands, **kwargs):
     """Einsum with sum over ellipses."""
     # https://github.com/numpy/numpy/issues/9984
     # einsum to support summing over ellipses
     operands = _parse_einsum_input(operands)
-    return np.einsum("->".join(operands[:-1]), *operands[-1])
+    return np.einsum("->".join(operands[:-1]), *operands[-1], **kwargs)
 
 
 def train_test_split(X, y, test_size=0.2, random_state=42, shuffle=True, stratify=True):
