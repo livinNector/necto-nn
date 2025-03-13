@@ -91,9 +91,9 @@ class Trainer:
     ):
         data_size = X_train.shape[0]
         total_size = data_size * self.n_epochs
+        X_train, X_val = X_train.astype(float), X_val.astype(float)
 
         n_steps = (total_size // self.batch_size) + bool(total_size % self.batch_size)
-        total_size = n_steps * self.batch_size
         p_bar = tqdm(
             zip(
                 array_batched(
@@ -120,15 +120,12 @@ class Trainer:
                 list(self.compiled.dW) + [x[np.newaxis, :] for x in self.compiled.db]
             ),
         )
-        completed = 0
         p_bar.set_postfix({"epoch": 0})
         for step, (X_batch, y_batch) in enumerate(p_bar, 1):
             y_pred = self.compiled.forward(X_batch)
-            loss = self.loss.forward(y_batch, y_pred)
             loss_gradient = self.loss.gradient(y_batch, y_pred)
             self.compiled.backward(loss_gradient)
             self.optimizer.update()
-            completed += self.batch_size
             if self.eval_steps and (step % self.eval_steps == 0 or step == n_steps):
                 self.log_metrics(
                     X_train,
@@ -137,5 +134,5 @@ class Trainer:
                     y_val,
                     p_bar,
                     step,
-                    epoch=completed / total_size,
+                    epoch=self.n_epochs * step / n_steps,
                 )
