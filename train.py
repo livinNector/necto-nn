@@ -58,7 +58,7 @@ def train(
             ]
         )
     (X_train, y_train), (X_test, y_test) = datasets[dataset].load_data()
-    X_train, X_test = flatten(X_train), flatten(X_test)
+    X_train, X_test = flatten(X_train).astype(float), flatten(X_test).astype(float)
 
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1)
     y_train, y_val, y_test = one_hot(y_train), one_hot(y_val), one_hot(y_test)
@@ -132,7 +132,7 @@ def train(
         optimizer=optimizer,
         loss=loss_func,
         metrics=["accuracy", "val_accuracy", "val_f1_score"],
-        eval_steps=100,
+        eval_steps=200,
         wandb_log=bool(wandb_project),
     )
     trainer.train(X_train, y_train, X_val, y_val)

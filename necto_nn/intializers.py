@@ -38,5 +38,6 @@ class XavierInit(Initializer):
 
 initalizers = {"random": RandomInit, "xavier": XavierInit}
 
+
 def get_initializer(name):
     return initalizers[name]
