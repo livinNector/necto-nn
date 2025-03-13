@@ -12,7 +12,7 @@ def precision(y, y_pred):
     """Precision for binary labels."""
     TP = (y & y_pred).sum()
     FP = (~y & y_pred).sum()
-    return np.nan_to_num(TP / (TP + FP))
+    return TP and TP / (TP + FP)
 
 
 @array_args
@@ -20,19 +20,19 @@ def recall(y, y_pred):
     """Recall for binary labels."""
     TP = (y & y_pred).sum()
     FN = (y & ~y_pred).sum()
-    return np.nan_to_num(TP / (TP + FN))
+    return TP and TP / (TP + FN)
 
 
 def micro_f1_score(y, y_pred):
     """F1 score for binary labels."""
     p = precision(y, y_pred)
     r = recall(y, y_pred)
-    return np.nan_to_num(2 * p * r / (p + r))
+    return p and r and 2 * p * r / (p + r)
 
 
 def f1_score(y, y_pred):
     """Macro F1 score."""
-    
+
     labels = np.unique(y)
     micro_f1_scores = []
     for label in labels:
@@ -42,10 +42,8 @@ def f1_score(y, y_pred):
     return np.mean(micro_f1_scores)
 
 
-metrics = {
-    'f1_score':f1_score,
-    'accuracy':accuracy
-}
+metrics = {"f1_score": f1_score, "accuracy": accuracy}
+
 
 def get_metric(name):
     return metrics[name]
