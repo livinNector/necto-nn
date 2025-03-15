@@ -1,8 +1,8 @@
-from numba import types, njit
-from numba.experimental import jitclass
-import numpy as np
 from functools import cached_property
 
+import numpy as np
+from numba import njit, types
+from numba.experimental import jitclass
 
 f_type = types.float64[:, ::1](types.float64[:, ::1]).as_type()
 b_type = types.float64[:, ::1](types.float64[:, ::1], types.float64[:, ::1]).as_type()
@@ -38,14 +38,14 @@ class Activation:
 
         Args:
             gradient: Inward gradient
-            X: output of the activation.
-        """
+            x: output of the activation.
 
+        """
         gradient_func = self.gradient
 
         @njit
-        def f(loss_gradient, X):
-            return loss_gradient * gradient_func(X)
+        def f(loss_gradient, x):
+            return loss_gradient * gradient_func(x)
 
         return f
 
@@ -54,27 +54,27 @@ class Activation:
 
 
 class Identity(Activation):
-    """Identity activation function: f(X) = X"""
+    """Identity activation function: f(x) = x."""
 
     @cached_property
     def forward(self):
         @njit
-        def f(X):
-            return X
+        def f(x):
+            return x
 
         return f
 
     @cached_property
     def gradient(self):
         @njit
-        def f(X):
-            return np.ones_like(X)
+        def f(x):
+            return np.ones_like(x)
 
         return f
 
 
 class Sigmoid(Activation):
-    """Sigmoid activation function: f(X) = 1 / (1 + exp(-X))"""
+    """Sigmoid activation function: f(x) = 1 / (1 + exp(-x))."""
 
     eps: float
 
@@ -86,28 +86,28 @@ class Sigmoid(Activation):
         eps = self.eps
 
         @njit
-        def f(X):
-            return 1 / (1 + np.exp(-X + eps))
+        def f(x):
+            return 1 / (1 + np.exp(-x + eps))
 
         return f
 
     @cached_property
     def gradient(self):
         @njit
-        def f(X):
-            return X * (1 - X)
+        def f(x):
+            return x * (1 - x)
 
         return f
 
 
 class ReLU(Activation):
-    """ReLU activation function: f(X) = max(0, X)"""
+    """ReLU activation function: f(x) = max(0, x)."""
 
     @cached_property
     def forward(self):
         @njit
-        def f(X):
-            return np.maximum(0, X)
+        def f(x):
+            return np.maximum(0, x)
 
         return f
 
@@ -115,34 +115,34 @@ class ReLU(Activation):
     def gradient(self):
         # since the output of ReLU is non negative
         @njit
-        def f(X):
-            return np.sign(X)
+        def f(x):
+            return np.sign(x)
 
         return f
 
 
 class TanH(Activation):
-    """Hyperbolic tangent activation function: f(X) = tanh(X)"""
+    """Hyperbolic tangent activation function: f(x) = tanh(x)."""
 
     @cached_property
     def forward(self):
         @njit
-        def f(X):
-            return np.tanh(X)
+        def f(x):
+            return np.tanh(x)
 
         return f
 
     @cached_property
     def gradient(self):
         @njit
-        def f(X):
-            return 1 - X**2
+        def f(x):
+            return 1 - x**2
 
         return f
 
 
 class SoftMax(Activation):
-    """SoftMax activation function: f(X) = exp(X) / sum(exp(X))"""
+    """SoftMax activation function: f(x) = exp(x) / sum(exp(x))."""
 
     eps: float
 
@@ -151,7 +151,7 @@ class SoftMax(Activation):
 
     @cached_property
     def softmax(self):
-        """Softmax for 1-dim"""
+        """Softmax for 1-dim."""
         eps = self.eps
 
         @njit
@@ -166,13 +166,13 @@ class SoftMax(Activation):
         softmax = self.softmax
 
         @njit
-        def f(X):
-            if X.ndim == 1:
-                return softmax(X)
-            if X.ndim == 2:
-                out = np.zeros(X.shape)
-                for i in range(X.shape[0]):
-                    out[i] = softmax(X[i])
+        def f(x):
+            if x.ndim == 1:
+                return softmax(x)
+            if x.ndim == 2:
+                out = np.zeros(x.shape)
+                for i in range(x.shape[0]):
+                    out[i] = softmax(x[i])
                 return out
 
         return f
@@ -182,13 +182,13 @@ class SoftMax(Activation):
         """Computes the Jacobian matrix of SoftMax."""
 
         @njit
-        def f(X):
-            out = np.zeros(X.shape + (X.shape[-1],))
-            for i in range(X.shape[-1]):
-                for j in range(X.shape[-1]):
-                    out[..., i, j] = -X[..., i] * (X[..., j])
+        def f(x):
+            out = np.zeros(x.shape + (x.shape[-1],))
+            for i in range(x.shape[-1]):
+                for j in range(x.shape[-1]):
+                    out[..., i, j] = -x[..., i] * (x[..., j])
                     if i == j:
-                        out[..., i, j] += X[..., i]
+                        out[..., i, j] += x[..., i]
             return out
 
         return f
@@ -198,10 +198,10 @@ class SoftMax(Activation):
         gradient_func = self.gradient
 
         @njit
-        def f(gradient, X):
-            out = np.zeros(X.shape)
-            act_gradient = gradient_func(X)
-            for n in range(X.shape[0]):
+        def f(gradient, x):
+            out = np.zeros(x.shape)
+            act_gradient = gradient_func(x)
+            for n in range(x.shape[0]):
                 out[n] = act_gradient[n] @ gradient[n]
             return out
 
@@ -209,20 +209,20 @@ class SoftMax(Activation):
 
 
 # class NpSoftMax(Activation):
-#     """Numpy implementation of softMax activation function: f(X) = exp(X) / sum(exp(X))"""
+#     """Numpy implementation of softMax activation function: f(x) = exp(x) / sum(exp(x))"""
 
 #     def __init__(self, eps=1e-100):
 #         self.eps = eps
 
-#     def forward(self, X):
-#         exp = np.exp(X - np.max(X, axis=-1, keepdims=True))  # For numerical stability
+#     def forward(self, x):
+#         exp = np.exp(x - np.max(x, axis=-1, keepdims=True))  # For numerical stability
 #         return exp / (exp.sum(axis=-1, keepdims=True) + self.eps)
 
-#     def gradient(self, X):
+#     def gradient(self, x):
 #         """Computes the Jacobian matrix of SoftMax."""
 
-#         return np.einsum("...i,ij->...ij", X, np.eye(X.shape[-1])) - np.einsum(
-#             "...i,...j->...ij", X, X
+#         return np.einsum("...i,ij->...ij", x, np.eye(x.shape[-1])) - np.einsum(
+#             "...i,...j->...ij", x, x
 #         )
 
 #     def backward(self, gradient, out):

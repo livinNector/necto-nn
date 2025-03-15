@@ -1,11 +1,13 @@
 import numpy as np
-from tqdm import tqdm
-from .losses import Loss
-from .optimizers import Optimizer
 from numba import typed
+from tqdm import tqdm
+
+import wandb
+
+from .losses import Loss
 from .metrics import get_metric
 from .nn import FeedForwardNetwork
-import wandb
+from .optimizers import Optimizer
 
 
 def array_batched(a, batch_size, epochs):
@@ -114,10 +116,12 @@ class Trainer:
         self.compiled = self.model.get_compiled()
         self.optimizer.init(
             typed.List(
-                list(self.compiled.W) + [x[np.newaxis, :] for x in self.compiled.b]
+                list(self.compiled.weights)
+                + [x[np.newaxis, :] for x in self.compiled.biases]
             ),
             typed.List(
-                list(self.compiled.dW) + [x[np.newaxis, :] for x in self.compiled.db]
+                list(self.compiled.d_weights)
+                + [x[np.newaxis, :] for x in self.compiled.d_biases]
             ),
         )
         p_bar.set_postfix({"epoch": 0})

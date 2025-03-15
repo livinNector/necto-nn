@@ -1,11 +1,11 @@
+from functools import wraps
+
 import numpy as np
 from numpy.core.einsumfunc import _parse_einsum_input
 
-from functools import wraps
-
 
 def array_args(func):
-    """Wrapper to ensure the arguments to the function are np arrays"""
+    """Wrapper to ensure the arguments to the function are np arrays."""
 
     @wraps(func)
     def inner(*args):
@@ -24,8 +24,8 @@ def one_hot(y, n=None):
     return y_one_hot
 
 
-def flatten(X):
-    return X.reshape(X.shape[0], -1)
+def flatten(x):
+    return x.reshape(x.shape[0], -1)
 
 
 def einsum(*operands, **kwargs):
@@ -37,10 +37,11 @@ def einsum(*operands, **kwargs):
 
 
 def train_test_split(X, y, test_size=0.2, random_state=42, shuffle=True, stratify=True):
-    """Splits dataset into training and testing sets.
+    """Split dataset into training and testing sets.
 
     Returns:
         tuple: (X_train, X_test, y_train, y_test)
+
     """
     n = X.shape[0]
     np.random.seed(random_state)

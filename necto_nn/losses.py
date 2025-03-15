@@ -1,5 +1,5 @@
-from numba.experimental import jitclass
 import numpy as np
+from numba.experimental import jitclass
 
 
 class Loss:

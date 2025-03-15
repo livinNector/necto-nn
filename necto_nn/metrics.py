@@ -1,4 +1,3 @@
-from .utils import array_args
 import numpy as np
 from numba import njit
 
@@ -11,17 +10,17 @@ def accuracy(y, y_pred):
 @njit
 def precision(y, y_pred):
     """Precision for binary labels."""
-    TP = (y & y_pred).sum()
-    FP = (~y & y_pred).sum()
-    return TP and TP / (TP + FP)
+    tp = (y & y_pred).sum()
+    fp = (~y & y_pred).sum()
+    return tp and tp / (tp + fp)
 
 
 @njit
 def recall(y, y_pred):
     """Recall for binary labels."""
-    TP = (y & y_pred).sum()
-    FN = (y & ~y_pred).sum()
-    return TP and TP / (TP + FN)
+    tp = (y & y_pred).sum()
+    fn = (y & ~y_pred).sum()
+    return tp and tp / (tp + fn)
 
 
 @njit
@@ -35,7 +34,6 @@ def micro_f1_score(y, y_pred):
 @njit
 def f1_score(y, y_pred):
     """Macro F1 score."""
-
     labels = np.unique(y)
     micro_f1_scores = np.zeros_like(labels, dtype=np.float64)
     for i, label in enumerate(labels):
