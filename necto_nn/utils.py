@@ -19,9 +19,7 @@ def array_args(func):
 def one_hot(y, n=None):
     if not n:
         n = np.unique(y).shape[0]
-    y_one_hot = np.zeros((y.shape[0], n))
-    y_one_hot[np.arange(y.shape[0]), y] = 1
-    return y_one_hot
+    return y[..., np.newaxis] == np.arange(n).reshape(1, -1)
 
 
 def flatten(x):
@@ -36,14 +34,14 @@ def einsum(*operands, **kwargs):
     return np.einsum("->".join(operands[:-1]), *operands[-1], **kwargs)
 
 
-def train_test_split(X, y, test_size=0.2, random_state=42, shuffle=True, stratify=True):
+def train_test_split(x, y, test_size=0.2, random_state=42, shuffle=True, stratify=True):
     """Split dataset into training and testing sets.
 
     Returns:
-        tuple: (X_train, X_test, y_train, y_test)
+        tuple: (x_train, x_test, y_train, y_test)
 
     """
-    n = X.shape[0]
+    n = x.shape[0]
     np.random.seed(random_state)
     if isinstance(test_size, float):
         test_size = int(n * test_size)
@@ -70,13 +68,13 @@ def train_test_split(X, y, test_size=0.2, random_state=42, shuffle=True, stratif
             np.random.shuffle(train_indices)
             np.random.shuffle(test_indices)
     else:
-        indices = np.arange(len(X))
+        indices = np.arange(len(x))
         if shuffle:
             np.random.shuffle(indices)
         train_indices = indices[:train_size]
         test_indices = indices[train_size:]
 
-    X_train, X_test = X[train_indices], X[test_indices]
+    x_train, x_test = x[train_indices], x[test_indices]
     y_train, y_test = y[train_indices], y[test_indices]
 
-    return X_train, X_test, y_train, y_test
+    return x_train, x_test, y_train, y_test
