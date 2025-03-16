@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 from numba import typed
 from tqdm import tqdm
@@ -39,6 +41,7 @@ class Trainer:
         loss: Loss,
         metrics=None,
         eval_steps=None,
+        metric_for_best_model="val_accuracy",
         wandb_log=False,
     ):
         self.model = model
@@ -54,6 +57,7 @@ class Trainer:
             metric[4:] for metric in metrics if metric.startswith("val_")
         }
         self.eval_steps = eval_steps
+        self.metric_for_best_model = metric_for_best_model
         self.wandb_log = wandb_log
 
     def eval(self, X, y, metrics):
@@ -65,24 +69,12 @@ class Trainer:
             metric: get_metric(metric)(y, y_pred) for metric in metrics
         }
 
-    def log_metrics(self, X_train, y_train, X_val, y_val, p_bar, step, epoch):
-        metrics = (
-            {
-                "epoch": epoch,
-            }
-            | {k: v for k, v in self.eval(X_train, y_train, self.train_metrics).items()}
-            | {
-                f"val_{k}": v
-                for k, v in self.eval(X_val, y_val, self.val_metrics).items()
-            }
-        )
-
-        p_bar.set_postfix({k: f"{v:.3f}" for k, v in metrics.items()})
-        if self.wandb_log:
-            wandb.log(
-                data=metrics,
-                step=step,
-            )
+    def compute_metrics(self, X_train, y_train, X_val, y_val):
+        return {
+            k: v for k, v in self.eval(X_train, y_train, self.train_metrics).items()
+        } | {
+            f"val_{k}": v for k, v in self.eval(X_val, y_val, self.val_metrics).items()
+        }
 
     def train(
         self,
@@ -113,30 +105,45 @@ class Trainer:
             desc="steps",
             mininterval=0.5,
         )
-        self.compiled = self.model.get_compiled()
+        compiled_model = self.model.get_compiled()
         self.optimizer.init(
             typed.List(
-                list(self.compiled.weights)
-                + [x[np.newaxis, :] for x in self.compiled.biases]
+                list(compiled_model.weights)
+                + [x[np.newaxis, :] for x in compiled_model.biases]
             ),
             typed.List(
-                list(self.compiled.d_weights)
-                + [x[np.newaxis, :] for x in self.compiled.d_biases]
+                list(compiled_model.d_weights)
+                + [x[np.newaxis, :] for x in compiled_model.d_biases]
             ),
         )
         p_bar.set_postfix({"epoch": 0})
+        metric_best = None
         for step, (X_batch, y_batch) in enumerate(p_bar, 1):
-            y_pred = self.compiled.forward(X_batch)
+            y_pred = compiled_model.forward(X_batch)
             loss_gradient = self.loss.gradient(y_batch, y_pred)
-            self.compiled.backward(loss_gradient)
+            compiled_model.backward(loss_gradient)
             self.optimizer.update()
             if self.eval_steps and (step % self.eval_steps == 0 or step == n_steps):
-                self.log_metrics(
+                metrics = self.compute_metrics(
                     X_train,
                     y_train,
                     X_val,
                     y_val,
-                    p_bar,
-                    step,
-                    epoch=self.n_epochs * step / n_steps,
                 )
+                metrics["epoch"] = self.n_epochs * step / n_steps
+                if self.metric_for_best_model:
+                    metric_curr = metrics[self.metric_for_best_model]
+                    if metric_best is None or metric_curr > metric_best:
+                        metric_best = metric_curr
+                        best_params = deepcopy(
+                            list(self.model.weights) + list(self.model.biases)
+                        )
+                p_bar.set_postfix({k: f"{v:.3f}" for k, v in metrics.items()})
+                if self.wandb_log:
+                    wandb.log(
+                        data=metrics,
+                        step=step,
+                    )
+        # loading the best params at the end
+        self.model.weights = typed.List(best_params[: self.model.n_layers])
+        self.model.biases = typed.List(best_params[self.model.n_layers :])

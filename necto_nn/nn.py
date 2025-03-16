@@ -1,4 +1,3 @@
-import pickle
 from typing import List
 
 import numba as nb
@@ -102,15 +101,6 @@ class FeedForwardNetwork:
             for i in range(len(self.weights)):
                 self.d_weights[i] += 2 * self.weight_decay * self.weights[i]
 
-    def save(self, file_name):
-        with open(file_name, "wb") as f:
-            pickle.dump(self, f)
-
-    @classmethod
-    def load(cls, file_name):
-        with open(file_name, "rb") as f:
-            return pickle.load(f)
-
     def get_compiled(self):
         # initialize the model
         self.init()
@@ -164,8 +154,12 @@ class CompiledFeedForwardNetwork(FeedForwardNetwork):
         self.d_weights = d_weights
         self.d_biases = d_biases
 
+    # removing unsupported methods for a compiled model
     def init(self):
         pass
 
     def get_compiled(self):
+        pass
+
+    def load(self):
         pass

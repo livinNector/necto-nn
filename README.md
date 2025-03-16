@@ -7,6 +7,7 @@ The repo was make like a python package which contains multiple python files eac
 
 Checkout [demo.ipynb](demo.ipynb) and [train.py](train.py) for the example usage of the API.
 
+Numba library was used to speed up the computations with jit compilations. 
 
 - [Github Repo](https://github.com/livinNector/necto-nn)
 - [Assignment Report](https://wandb.ai/livinNector-academic/deep-learning-course/reports/Livin-Nector-s-DA6401-Assignment-1--VmlldzoxMTY4NTc0NA)

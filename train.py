@@ -1,19 +1,17 @@
 import argparse
-import wandb
-from keras._tf_keras.keras.datasets import fashion_mnist, mnist
-from necto_nn.nn import FeedForwardNetwork
-from necto_nn.activations import get_activation
-from necto_nn.optimizers import get_optimizer
-from necto_nn.losses import get_loss
-from necto_nn.intializers import get_initializer
-from necto_nn.trainer import Trainer
-from necto_nn.utils import one_hot, train_test_split, flatten
 
+from keras._tf_keras.keras.datasets import fashion_mnist, mnist
+
+import wandb
+from necto_nn.activations import get_activation
+from necto_nn.intializers import get_initializer
+from necto_nn.losses import get_loss
+from necto_nn.nn import FeedForwardNetwork
+from necto_nn.optimizers import get_optimizer
+from necto_nn.trainer import Trainer
+from necto_nn.utils import flatten, one_hot, train_test_split
 
 datasets = {"fashion_mnist": fashion_mnist, "mnist": mnist}
-
-
-wandb.login()
 
 
 def train(
@@ -36,9 +34,7 @@ def train(
     hidden_size: int,
     activation: str,
 ):
-    """
-    Train a neural network with specified parameters.
-    """
+    """Train a neural network with specified parameters."""
     if wandb_project:
         run_name = "_".join(
             [
@@ -57,12 +53,12 @@ def train(
                 ]
             ]
         )
-    (X_train, y_train), (X_test, y_test) = datasets[dataset].load_data()
-    X_train, X_test = flatten(X_train).astype(float), flatten(X_test).astype(float)
+    (x_train, y_train), (x_test, y_test) = datasets[dataset].load_data()
+    x_train, x_test = flatten(x_train).astype(float), flatten(x_test).astype(float)
 
-    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1)
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1)
     y_train, y_val, y_test = one_hot(y_train), one_hot(y_val), one_hot(y_test)
-    input_size = X_train.shape[-1]
+    input_size = x_train.shape[-1]
     output_size = y_train.shape[-1]
 
     activation_func = get_activation(activation)
@@ -135,8 +131,8 @@ def train(
         eval_steps=200,
         wandb_log=bool(wandb_project),
     )
-    trainer.train(X_train, y_train, X_val, y_val)
-    metrics = trainer.eval(X_test, y_test, metrics=["accuracy", "f1_score"])
+    trainer.train(x_train, y_train, x_val, y_val)
+    metrics = trainer.eval(x_test, y_test, metrics=["accuracy", "f1_score"])
 
     if wandb_project:
         for k, v in metrics.items():
